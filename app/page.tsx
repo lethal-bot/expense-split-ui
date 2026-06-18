@@ -25,84 +25,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Balance, Expense, ExpenseDraft, Friend, TabId } from "@/utils/Types";
+import { currency, emptyDraft, friends, initialExpenses, tabs } from "@/utils/Constants";
+import { SummaryTile } from "@/components/custom/SummaryTile";
+import { Field } from "@/components/custom/Field";
+import { DetailItem } from "@/components/custom/DetailItem";
 
-type Friend = "You" | "Aarav" | "Meera";
-type TabId = "expenses" | "add" | "debts" | "profile";
-
-type Expense = {
-  id: number;
-  title: string;
-  paidBy: Friend;
-  amount: number;
-  note: string;
-  splitWith: Friend[];
-  settledBy: Friend[];
-};
-
-type Balance = {
-  from: Friend;
-  to: Friend;
-  amount: number;
-};
-
-type ExpenseDraft = {
-  title: string;
-  amount: string;
-  note: string;
-  splitWith: Friend[];
-};
-
-const friends: Friend[] = ["You", "Aarav", "Meera"];
-
-const initialExpenses: Expense[] = [
-  {
-    id: 1,
-    title: "Dinner",
-    paidBy: "Aarav",
-    amount: 2400,
-    note: "Shared equally after movie night",
-    splitWith: ["You", "Aarav", "Meera"],
-    settledBy: ["Aarav"],
-  },
-  {
-    id: 2,
-    title: "Groceries",
-    paidBy: "You",
-    amount: 1500,
-    note: "Weekend breakfast and snacks",
-    splitWith: ["You", "Aarav", "Meera"],
-    settledBy: ["You", "Meera"],
-  },
-  {
-    id: 3,
-    title: "Cab",
-    paidBy: "Meera",
-    amount: 900,
-    note: "Airport pickup",
-    splitWith: ["You", "Meera"],
-    settledBy: ["Meera"],
-  },
-];
-
-const emptyDraft: ExpenseDraft = {
-  title: "",
-  amount: "",
-  note: "",
-  splitWith: friends,
-};
-
-const currency = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
-
-const tabs: Array<{ id: TabId; label: string; icon: ReactNode }> = [
-  { id: "expenses", label: "Expenses", icon: <ReceiptText className="h-5 w-5" /> },
-  { id: "add", label: "Add", icon: <PlusCircle className="h-5 w-5" /> },
-  { id: "debts", label: "Debts", icon: <WalletCards className="h-5 w-5" /> },
-  { id: "profile", label: "Profile", icon: <UserRound className="h-5 w-5" /> },
-];
 
 function getShare(expense: Expense) {
   return Math.round(expense.amount / Math.max(expense.splitWith.length, 1));
@@ -406,7 +334,8 @@ function ExpensesTab({
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{expense.title}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Paid by {expense.paidBy} · {expense.splitWith.length} split
+                      Paid by {expense.paidBy} · {expense.splitWith.length}{" "}
+                      split
                     </p>
                   </div>
                   <Badge variant={iPaid ? "success" : "secondary"}>
@@ -568,7 +497,9 @@ function DebtsTab({
             <WalletCards className="h-5 w-5 text-primary" />
             Current Debts
           </CardTitle>
-          <CardDescription>Balances update after marked payments.</CardDescription>
+          <CardDescription>
+            Balances update after marked payments.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {balances.length > 0 ? (
@@ -666,9 +597,18 @@ function ProfileTab({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <DetailItem label="I owe" value={currency.format(myOpenContribution)} />
-            <DetailItem label="Owed to me" value={currency.format(receivableToMe)} />
-            <DetailItem label="I spent" value={currency.format(totalSpentByMe)} />
+            <DetailItem
+              label="I owe"
+              value={currency.format(myOpenContribution)}
+            />
+            <DetailItem
+              label="Owed to me"
+              value={currency.format(receivableToMe)}
+            />
+            <DetailItem
+              label="I spent"
+              value={currency.format(totalSpentByMe)}
+            />
             <DetailItem label="Friends" value={String(friends.length)} />
           </div>
 
@@ -738,9 +678,15 @@ function ExpenseDetail({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <DetailItem label="Total" value={currency.format(expense.amount)} />
-          <DetailItem label="Each share" value={currency.format(getShare(expense))} />
+          <DetailItem
+            label="Each share"
+            value={currency.format(getShare(expense))}
+          />
           <DetailItem label="Paid by" value={expense.paidBy} />
-          <DetailItem label="Split" value={`${expense.splitWith.length} people`} />
+          <DetailItem
+            label="Split"
+            value={`${expense.splitWith.length} people`}
+          />
         </div>
 
         <div className="space-y-2">
@@ -789,42 +735,4 @@ function ExpenseDetail({
   );
 }
 
-function SummaryTile({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-center justify-between p-4">
-        <div>
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <p className="mt-1 text-xl font-bold">{value}</p>
-        </div>
-        <div className="rounded-md bg-primary/10 p-2 text-primary">{icon}</div>
-      </CardContent>
-    </Card>
-  );
-}
 
-function DetailItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border bg-background p-3">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-semibold">{value}</p>
-    </div>
-  );
-}
-
-function Field({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <label className="space-y-2">
-      <span className="block text-sm font-medium">{label}</span>
-      {children}
-    </label>
-  );
-}
