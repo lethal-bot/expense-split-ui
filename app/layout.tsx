@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NavigationBar from "@/components/custom/NavigationBar";
 
 export const metadata: Metadata = {
   title: "Three Friends Split",
@@ -13,7 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="relative min-h-screen">
+        {children}
+        <NavigationBar />
+      </body>
     </html>
   );
 }

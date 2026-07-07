@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, ReactNode, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   CheckCircle2,
@@ -30,6 +31,9 @@ import { currency, emptyDraft, friends, initialExpenses, tabs } from "@/utils/Co
 import { SummaryTile } from "@/components/custom/SummaryTile";
 import { Field } from "@/components/custom/Field";
 import { DetailItem } from "@/components/custom/DetailItem";
+import AddExpenseTab from "@/app/add/AddExpenseTab";
+import DebtsTab from "@/app/debts/DebtsTab";
+import ProfileTab from "@/app/profile/ProfileTab";
 
 
 function getShare(expense: Expense) {
@@ -76,8 +80,21 @@ function getBalances(expenses: Expense[]): Balance[] {
   return balances;
 }
 
-export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabId>("expenses");
+function HomeContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabQuery = searchParams.get("tab") as TabId;
+  const activeTab = (tabQuery && ["expenses", "add", "debts", "profile"].includes(tabQuery)) ? tabQuery : "expenses";
+
+  const setActiveTab = (tab: TabId) => {
+    if (tab === "add") {
+      router.push("/add");
+    } else if (tab === "expenses") {
+      router.push("/");
+    } else {
+      router.push(`/?tab=${tab}`);
+    }
+  };
   const [darkMode, setDarkMode] = useState(false);
   const [expenses, setExpenses] = useState(initialExpenses);
   const [selectedId, setSelectedId] = useState(initialExpenses[0].id);
@@ -252,25 +269,16 @@ export default function Home() {
           )}
         </section>
 
-        <nav className="fixed inset-x-0 bottom-0 border-t bg-card/95 px-3 py-2 text-card-foreground backdrop-blur">
-          <div className="mx-auto grid max-w-md grid-cols-4 gap-1 sm:max-w-2xl">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-1 text-xs font-medium text-muted-foreground transition-colors",
-                  activeTab === tab.id && "bg-primary text-primary-foreground",
-                )}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
       </main>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background text-foreground flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
 
@@ -356,304 +364,11 @@ function ExpensesTab({
   );
 }
 
-function AddExpenseTab({
-  draft,
-  draftShare,
-  setDraft,
-  toggleSplitFriend,
-  addExpense,
-}: {
-  draft: ExpenseDraft;
-  draftShare: number;
-  setDraft: React.Dispatch<React.SetStateAction<ExpenseDraft>>;
-  toggleSplitFriend: (friend: Friend) => void;
-  addExpense: (event: FormEvent<HTMLFormElement>) => void;
-}) {
-  return (
-    <form className="space-y-4" onSubmit={addExpense}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Expense</CardTitle>
-          <CardDescription>Paid by You</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Field label="Expense name">
-            <input
-              className="h-11 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-              placeholder="Lunch, cab, tickets"
-              value={draft.title}
-              onChange={(event) =>
-                setDraft((currentDraft) => ({
-                  ...currentDraft,
-                  title: event.target.value,
-                }))
-              }
-            />
-          </Field>
 
-          <Field label="Amount">
-            <input
-              className="h-11 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-              inputMode="numeric"
-              min="1"
-              placeholder="1200"
-              type="number"
-              value={draft.amount}
-              onChange={(event) =>
-                setDraft((currentDraft) => ({
-                  ...currentDraft,
-                  amount: event.target.value,
-                }))
-              }
-            />
-          </Field>
 
-          <Field label="Note">
-            <textarea
-              className="min-h-20 w-full resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-              placeholder="Short detail"
-              value={draft.note}
-              onChange={(event) =>
-                setDraft((currentDraft) => ({
-                  ...currentDraft,
-                  note: event.target.value,
-                }))
-              }
-            />
-          </Field>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Split with</p>
-            <div className="grid grid-cols-3 gap-2">
-              {friends.map((friend) => {
-                const selected = draft.splitWith.includes(friend);
 
-                return (
-                  <button
-                    key={friend}
-                    className={cn(
-                      "rounded-md border px-2 py-3 text-sm font-medium transition-colors",
-                      selected
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "bg-background text-muted-foreground",
-                    )}
-                    type="button"
-                    onClick={() => toggleSplitFriend(friend)}
-                  >
-                    {friend}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <DetailItem label="People" value={String(draft.splitWith.length)} />
-            <DetailItem
-              label="Each share"
-              value={currency.format(draftShare)}
-            />
-          </div>
-
-          <Button
-            className="w-full"
-            disabled={
-              !draft.title.trim() ||
-              Number(draft.amount) <= 0 ||
-              draft.splitWith.length === 0
-            }
-            type="submit"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Save expense
-          </Button>
-        </CardContent>
-      </Card>
-    </form>
-  );
-}
-
-function DebtsTab({
-  balances,
-  expenses,
-  markContribution,
-}: {
-  balances: Balance[];
-  expenses: Expense[];
-  markContribution: (expenseId: number, friend?: Friend) => void;
-}) {
-  const pendingExpenses = expenses.filter(
-    (expense) =>
-      expense.splitWith.includes("You") &&
-      expense.paidBy !== "You" &&
-      !expense.settledBy.includes("You"),
-  );
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <WalletCards className="h-5 w-5 text-primary" />
-            Current Debts
-          </CardTitle>
-          <CardDescription>
-            Balances update after marked payments.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {balances.length > 0 ? (
-            balances.map((balance) => (
-              <div
-                key={`${balance.from}-${balance.to}`}
-                className="flex items-center justify-between rounded-md border bg-background px-3 py-3"
-              >
-                <p className="text-sm">
-                  <span className="font-semibold">{balance.from}</span> owes{" "}
-                  {balance.to}
-                </p>
-                <span className="text-sm font-bold">
-                  {currency.format(balance.amount)}
-                </span>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-md border bg-background px-3 py-4 text-sm text-muted-foreground">
-              Everyone is settled.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>My Pending Shares</CardTitle>
-          <CardDescription>Mark your payments from here.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {pendingExpenses.length > 0 ? (
-            pendingExpenses.map((expense) => (
-              <div
-                key={expense.id}
-                className="flex items-center justify-between gap-3 rounded-md bg-muted p-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold">{expense.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Owed to {expense.paidBy}
-                  </p>
-                </div>
-                <Button size="sm" onClick={() => markContribution(expense.id)}>
-                  {currency.format(getShare(expense))}
-                </Button>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-md bg-muted px-3 py-4 text-sm text-muted-foreground">
-              No pending shares for you.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function ProfileTab({
-  darkMode,
-  expenses,
-  myOpenContribution,
-  receivableToMe,
-  setDarkMode,
-  totalSpentByMe,
-}: {
-  darkMode: boolean;
-  expenses: Expense[];
-  myOpenContribution: number;
-  receivableToMe: number;
-  setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
-  totalSpentByMe: number;
-}) {
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary text-2xl font-bold text-primary-foreground">
-            Y
-          </div>
-          <div className="min-w-0">
-            <p className="text-xl font-bold">You</p>
-            <p className="text-sm text-muted-foreground">
-              Group member · {expenses.length} expenses
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Personal split summary</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <DetailItem
-              label="I owe"
-              value={currency.format(myOpenContribution)}
-            />
-            <DetailItem
-              label="Owed to me"
-              value={currency.format(receivableToMe)}
-            />
-            <DetailItem
-              label="I spent"
-              value={currency.format(totalSpentByMe)}
-            />
-            <DetailItem label="Friends" value={String(friends.length)} />
-          </div>
-
-          <Button
-            className="w-full"
-            variant="outline"
-            onClick={() => setDarkMode((value) => !value)}
-          >
-            {darkMode ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-            {darkMode ? "Light mode" : "Dark mode"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Group</CardTitle>
-          <CardDescription>Friends in this split</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {friends.map((friend) => (
-            <div
-              key={friend}
-              className="flex items-center justify-between rounded-md bg-muted px-3 py-3"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background font-semibold">
-                  {friend[0]}
-                </div>
-                <p className="text-sm font-medium">{friend}</p>
-              </div>
-              <Badge variant={friend === "You" ? "default" : "secondary"}>
-                {friend === "You" ? "Me" : "Friend"}
-              </Badge>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
 
 function ExpenseDetail({
   expense,
