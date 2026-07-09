@@ -19,6 +19,8 @@ function NavigationBarContent() {
     activeTab = "debts";
   } else if (pathname === "/profile") {
     activeTab = "profile";
+  } else if (pathname === "/groups") {
+    activeTab = "groups"
   } else if (pathname === "/") {
     const tabQuery = searchParams.get("tab") as TabId;
     if (tabQuery && ["expenses"].includes(tabQuery)) {
@@ -35,7 +37,9 @@ function NavigationBarContent() {
       router.push("/profile");
     } else if (tabId === "expenses") {
       router.push("/");
-    } else {
+    } else if (tabId === "groups")
+      router.push("/groups")
+    else {
       router.push(`/?tab=${tabId}`);
     }
   };
