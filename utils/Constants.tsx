@@ -1,5 +1,5 @@
 import { FormEvent, ReactNode, useMemo, useState } from "react";
-import { PlusCircle, ReceiptText, UserRound, WalletCards } from "lucide-react";
+import { PlusCircle, ReceiptText, UserRound, WalletCards, UsersRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +63,7 @@ export const tabs: Array<{ id: TabId; label: string; icon: ReactNode }> = [
     label: "Expenses",
     icon: <ReceiptText className="h-5 w-5" />,
   },
+  { id: "groups", label: "Groups", icon: <UsersRound className="h-5 w-5" /> },
   { id: "add", label: "Add", icon: <PlusCircle className="h-5 w-5" /> },
   { id: "debts", label: "Debts", icon: <WalletCards className="h-5 w-5" /> },
   { id: "profile", label: "Profile", icon: <UserRound className="h-5 w-5" /> },

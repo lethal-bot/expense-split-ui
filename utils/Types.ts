@@ -1,5 +1,5 @@
 export type Friend = "You" | "Aarav" | "Meera";
-export type TabId = "expenses" | "add" | "debts" | "profile";
+export type TabId = "expenses" | "groups" | "add" | "debts" | "profile";
 
 export type Expense = {
   id: number;

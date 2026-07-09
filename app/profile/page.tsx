@@ -52,7 +52,19 @@ function getBalances(expenses: Expense[]): Balance[] {
 
 export default function ProfilePage() {
   const [expenses] = useState<Expense[]>(initialExpenses);
-  const [darkMode, setDarkMode] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const currentTheme = (document.documentElement.getAttribute("data-theme") || "light") as "light" | "dark";
+    setTheme(currentTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("theme", nextTheme);
+    document.documentElement.setAttribute("data-theme", nextTheme);
+  };
 
   const balances = useMemo(() => getBalances(expenses), [expenses]);
 
@@ -82,28 +94,19 @@ export default function ProfilePage() {
     }, 0);
   }, [expenses]);
 
-  // Sync dark mode class on html/body element
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [darkMode]);
-
   return (
-    <main className={cn("min-h-screen bg-background text-foreground pb-24", darkMode && "dark")}>
+    <main className={cn("min-h-screen bg-background text-foreground pb-24")}>
       <div className="mx-auto max-w-md p-4 sm:max-w-2xl">
         <header className="mb-5">
           <p className="text-sm font-medium text-muted-foreground">Three friends</p>
           <h1 className="mt-1 text-3xl font-bold tracking-normal">Profile</h1>
         </header>
         <ProfileTab
-          darkMode={darkMode}
+          theme={theme}
+          toggleTheme={toggleTheme}
           expenses={expenses}
           myOpenContribution={myOpenContribution}
           receivableToMe={receivableToMe}
-          setDarkMode={setDarkMode}
           totalSpentByMe={totalSpentByMe}
         />
       </div>

@@ -1,19 +1,16 @@
 "use client";
 
-import { FormEvent, ReactNode, useMemo, useState, Suspense } from "react";
+import { FormEvent, ReactNode, useMemo, useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   CheckCircle2,
   CircleDollarSign,
   Moon,
-  PlusCircle,
   ReceiptText,
   RotateCcw,
   Sun,
-  UserRound,
   UsersRound,
-  WalletCards,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -26,86 +23,38 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Balance, Expense, ExpenseDraft, Friend, TabId } from "@/utils/Types";
+import { Expense, Friend } from "@/utils/Types";
 import { currency, emptyDraft, friends, initialExpenses, tabs } from "@/utils/Constants";
 import { SummaryTile } from "@/components/custom/SummaryTile";
-import { Field } from "@/components/custom/Field";
 import { DetailItem } from "@/components/custom/DetailItem";
-import AddExpenseTab from "@/app/add/AddExpenseTab";
-import DebtsTab from "@/app/debts/DebtsTab";
-import ProfileTab from "@/app/profile/ProfileTab";
 
 
 function getShare(expense: Expense) {
   return Math.round(expense.amount / Math.max(expense.splitWith.length, 1));
 }
 
-function getBalances(expenses: Expense[]): Balance[] {
-  const totals = new Map<Friend, Map<Friend, number>>();
-
-  friends.forEach((from) => {
-    totals.set(from, new Map());
-  });
-
-  expenses.forEach((expense) => {
-    const share = getShare(expense);
-
-    expense.splitWith.forEach((friend) => {
-      if (friend === expense.paidBy || expense.settledBy.includes(friend)) {
-        return;
-      }
-
-      const current = totals.get(friend)?.get(expense.paidBy) ?? 0;
-      totals.get(friend)?.set(expense.paidBy, current + share);
-    });
-  });
-
-  const balances: Balance[] = [];
-
-  friends.forEach((from) => {
-    friends.forEach((to) => {
-      if (from === to) {
-        return;
-      }
-
-      const forward = totals.get(from)?.get(to) ?? 0;
-      const reverse = totals.get(to)?.get(from) ?? 0;
-
-      if (forward > reverse) {
-        balances.push({ from, to, amount: forward - reverse });
-      }
-    });
-  });
-
-  return balances;
-}
 
 function HomeContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tabQuery = searchParams.get("tab") as TabId;
-  const activeTab = (tabQuery && ["expenses", "add", "debts", "profile"].includes(tabQuery)) ? tabQuery : "expenses";
 
-  const setActiveTab = (tab: TabId) => {
-    if (tab === "add") {
-      router.push("/add");
-    } else if (tab === "expenses") {
-      router.push("/");
-    } else {
-      router.push(`/?tab=${tab}`);
-    }
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const currentTheme = (document.documentElement.getAttribute("data-theme") || "light") as "light" | "dark";
+    setTheme(currentTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("theme", nextTheme);
+    document.documentElement.setAttribute("data-theme", nextTheme);
   };
-  const [darkMode, setDarkMode] = useState(false);
   const [expenses, setExpenses] = useState(initialExpenses);
   const [selectedId, setSelectedId] = useState(initialExpenses[0].id);
   const [draft, setDraft] = useState(emptyDraft);
 
   const selectedExpense =
     expenses.find((expense) => expense.id === selectedId) ?? expenses[0];
-
-  const balances = useMemo(() => getBalances(expenses), [expenses]);
-  const draftAmount = Number(draft.amount) || 0;
-  const draftShare = draftAmount / Math.max(draft.splitWith.length, 1);
 
   const myOpenContribution = expenses.reduce((total, expense) => {
     if (
@@ -119,13 +68,6 @@ function HomeContent() {
     return total + getShare(expense);
   }, 0);
 
-  const totalSpentByMe = expenses.reduce((total, expense) => {
-    return expense.paidBy === "You" ? total + expense.amount : total;
-  }, 0);
-
-  const receivableToMe = balances
-    .filter((balance) => balance.to === "You")
-    .reduce((total, balance) => total + balance.amount, 0);
 
   function markContribution(expenseId: number, friend: Friend = "You") {
     setExpenses((currentExpenses) =>
@@ -142,55 +84,16 @@ function HomeContent() {
     );
   }
 
-  function toggleSplitFriend(friend: Friend) {
-    setDraft((currentDraft) => {
-      const exists = currentDraft.splitWith.includes(friend);
-      const splitWith = exists
-        ? currentDraft.splitWith.filter((name) => name !== friend)
-        : [...currentDraft.splitWith, friend];
 
-      return {
-        ...currentDraft,
-        splitWith,
-      };
-    });
-  }
-
-  function addExpense(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const amount = Math.round(Number(draft.amount));
-    const title = draft.title.trim();
-
-    if (!title || amount <= 0 || draft.splitWith.length === 0) {
-      return;
-    }
-
-    const nextExpense: Expense = {
-      id: Date.now(),
-      title,
-      amount,
-      paidBy: "You",
-      note: draft.note.trim() || "Added by you",
-      splitWith: draft.splitWith,
-      settledBy: draft.splitWith.includes("You") ? ["You"] : [],
-    };
-
-    setExpenses((currentExpenses) => [nextExpense, ...currentExpenses]);
-    setSelectedId(nextExpense.id);
-    setDraft(emptyDraft);
-    setActiveTab("expenses");
-  }
 
   function resetDemo() {
     setExpenses(initialExpenses);
     setSelectedId(initialExpenses[0].id);
     setDraft(emptyDraft);
-    setActiveTab("expenses");
   }
 
   return (
-    <div className={cn(darkMode && "dark")}>
+    <>
       <main className="min-h-screen bg-background text-foreground">
         <section className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-24 pt-5 sm:max-w-2xl">
           <header className="mb-5 flex items-start justify-between gap-4">
@@ -207,10 +110,10 @@ function HomeContent() {
                 aria-label="Toggle dark mode"
                 size="icon"
                 variant="outline"
-                onClick={() => setDarkMode((value) => !value)}
+                onClick={toggleTheme}
                 title="Toggle dark mode"
               >
-                {darkMode ? (
+                {theme === "dark" ? (
                   <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />
@@ -227,50 +130,17 @@ function HomeContent() {
               </Button>
             </div>
           </header>
-
-          {activeTab === "expenses" && (
-            <ExpensesTab
-              expenses={expenses}
-              selectedExpense={selectedExpense}
-              selectedId={selectedId}
-              myOpenContribution={myOpenContribution}
-              markContribution={markContribution}
-              setSelectedId={setSelectedId}
-            />
-          )}
-
-          {activeTab === "add" && (
-            <AddExpenseTab
-              draft={draft}
-              draftShare={draftShare}
-              setDraft={setDraft}
-              toggleSplitFriend={toggleSplitFriend}
-              addExpense={addExpense}
-            />
-          )}
-
-          {activeTab === "debts" && (
-            <DebtsTab
-              balances={balances}
-              expenses={expenses}
-              markContribution={markContribution}
-            />
-          )}
-
-          {activeTab === "profile" && (
-            <ProfileTab
-              darkMode={darkMode}
-              expenses={expenses}
-              myOpenContribution={myOpenContribution}
-              receivableToMe={receivableToMe}
-              setDarkMode={setDarkMode}
-              totalSpentByMe={totalSpentByMe}
-            />
-          )}
+          <ExpensesTab
+            expenses={expenses}
+            selectedExpense={selectedExpense}
+            selectedId={selectedId}
+            myOpenContribution={myOpenContribution}
+            markContribution={markContribution}
+            setSelectedId={setSelectedId}
+          />
         </section>
-
       </main>
-    </div>
+    </>
   );
 }
 

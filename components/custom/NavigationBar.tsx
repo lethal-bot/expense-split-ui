@@ -42,7 +42,7 @@ function NavigationBarContent() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 border-t bg-card/95 px-3 py-2 text-card-foreground backdrop-blur z-50">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-1 sm:max-w-2xl">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1 sm:max-w-2xl">
         {tabs.map((tab) => (
           <button
             key={tab.id}

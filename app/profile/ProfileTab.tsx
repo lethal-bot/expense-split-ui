@@ -9,18 +9,18 @@ import { Expense } from "@/utils/Types";
 import { Sun, Moon } from "lucide-react";
 
 export default function ProfileTab({
-  darkMode,
+  theme,
+  toggleTheme,
   expenses,
   myOpenContribution,
   receivableToMe,
-  setDarkMode,
   totalSpentByMe,
 }: {
-  darkMode: boolean;
+  theme: "light" | "dark";
+  toggleTheme: () => void;
   expenses: Expense[];
   myOpenContribution: number;
   receivableToMe: number;
-  setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
   totalSpentByMe: number;
 }) {
   return (
@@ -64,14 +64,14 @@ export default function ProfileTab({
           <Button
             className="w-full"
             variant="outline"
-            onClick={() => setDarkMode((value) => !value)}
+            onClick={toggleTheme}
           >
-            {darkMode ? (
+            {theme === "dark" ? (
               <Sun className="h-4 w-4" />
             ) : (
               <Moon className="h-4 w-4" />
             )}
-            {darkMode ? "Light mode" : "Dark mode"}
+            {theme === "dark" ? "Light mode" : "Dark mode"}
           </Button>
         </CardContent>
       </Card>
