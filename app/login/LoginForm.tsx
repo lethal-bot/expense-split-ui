@@ -13,25 +13,56 @@ import {
     FieldDescription,
     FieldGroup,
     FieldLabel,
-    FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
-
+import { useState, FormEvent } from "react"
+import { useApi } from "@/hooks/useApi"
+import { API } from "@/utils/Api"
 export function LoginForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
 
-    const [register, switchToRegister] = useState<Boolean>(false);
+    const [register, switchToRegister] = useState<boolean>(false);
+    const [email, setEmail] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+
+    const loginApi = useApi(API.login);
+    const registerApi = useApi(API.register);
+
+    const isLoading = register ? registerApi.loading : loginApi.loading;
+    const apiError = register ? registerApi.error : loginApi.error;
 
     function handleSwitchToRegister() {
         switchToRegister((e) => !e);
+        loginApi.reset();
+        registerApi.reset();
     }
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        try {
+            if (register) {
+                const data = await registerApi.execute({
+                    method: "POST",
+                    body: { email, password }
+                });
+                console.log("Register successful:", data);
+            } else {
+                const data = await loginApi.execute({
+                    method: "POST",
+                    body: { email, password }
+                });
+                console.log("Login successful:", data);
+            }
+        } catch (err) {
+            console.error("Authentication error:", err);
+        }
+    };
 
     const registerForm = {
         title: "Register to Expense Split",
-        subTitile: "Register with you Email and Password",
+        subTitile: "Register with your Email and Password",
         submitButton: "Register",
         switch: {
             question: "Already have an account?",
@@ -41,7 +72,7 @@ export function LoginForm({
 
     const loginForm = {
         title: "Welcome Back",
-        subTitile: "Login with you Email and Password",
+        subTitile: "Login with your Email and Password",
         submitButton: "Login",
         switch: {
             question: "Don't have an account?",
@@ -50,7 +81,6 @@ export function LoginForm({
     }
 
     const currentForm = register ? registerForm : loginForm;
-
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -62,7 +92,7 @@ export function LoginForm({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form>
+                    <form onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Field>
                                 <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -71,34 +101,49 @@ export function LoginForm({
                                     type="email"
                                     placeholder="m@example.com"
                                     required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    disabled={isLoading}
                                 />
                             </Field>
                             <Field>
                                 <div className="flex items-center">
                                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                                    {/* <a
-                                        href="#"
-                                        className="ml-auto text-sm underline-offset-4 hover:underline"
-                                    >
-                                        Forgot your password?
-                                    </a> */}
                                 </div>
-                                <Input id="password" type="password" required />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    disabled={isLoading}
+                                />
                             </Field>
+
+                            {apiError && (
+                                <div className="text-sm text-red-500 font-medium text-center">
+                                    {apiError.message}
+                                </div>
+                            )}
+
                             <Field>
-                                <Button type="submit">{currentForm.submitButton}</Button>
+                                <Button type="submit" disabled={isLoading}>
+                                    {isLoading ? "Processing..." : currentForm.submitButton}
+                                </Button>
                                 <FieldDescription className="text-center">
-                                    {currentForm.switch.question} <span className="text-blue-400 underline" onClick={handleSwitchToRegister}>{currentForm.switch.button}</span>
+                                    {currentForm.switch.question}{" "}
+                                    <span
+                                        className="text-blue-400 underline cursor-pointer hover:text-blue-500 transition-colors"
+                                        onClick={handleSwitchToRegister}
+                                    >
+                                        {currentForm.switch.button}
+                                    </span>
                                 </FieldDescription>
                             </Field>
                         </FieldGroup>
                     </form>
                 </CardContent>
             </Card>
-            {/* <FieldDescription className="px-6 text-center">
-                By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-                and <a href="#">Privacy Policy</a>.
-            </FieldDescription> */}
         </div>
     )
 }
