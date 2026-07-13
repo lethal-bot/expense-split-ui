@@ -26,6 +26,7 @@ export function LoginForm({
     const [register, switchToRegister] = useState<boolean>(false);
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
+    const [name, setName] = useState<string>("");
 
     const loginApi = useApi(API.login);
     const registerApi = useApi(API.register);
@@ -37,23 +38,28 @@ export function LoginForm({
         switchToRegister((e) => !e);
         loginApi.reset();
         registerApi.reset();
+        setEmail("");
+        setPassword("");
+        setName("");
     }
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         try {
             if (register) {
-                const data = await registerApi.execute({
+                const response = await registerApi.execute({
                     method: "POST",
-                    body: { email, password }
+                    body: { name, email, password }
                 });
-                console.log("Register successful:", data);
+                console.log("Register successful:", response);
+                localStorage.setItem('token', response.data.token);
             } else {
-                const data = await loginApi.execute({
+                const response = await loginApi.execute({
                     method: "POST",
                     body: { email, password }
                 });
-                console.log("Login successful:", data);
+                console.log("Login successful:", response);
+                localStorage.setItem('token', response.data.token);
             }
         } catch (err) {
             console.error("Authentication error:", err);
@@ -94,6 +100,20 @@ export function LoginForm({
                 <CardContent>
                     <form onSubmit={handleSubmit}>
                         <FieldGroup>
+                            {register && (
+                                <Field>
+                                    <FieldLabel htmlFor="name">Name</FieldLabel>
+                                    <Input
+                                        id="name"
+                                        type="text"
+                                        placeholder="Enter Your Name"
+                                        required
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        disabled={isLoading}
+                                    />
+                                </Field>
+                            )}
                             <Field>
                                 <FieldLabel htmlFor="email">Email</FieldLabel>
                                 <Input
