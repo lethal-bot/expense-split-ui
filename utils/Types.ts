@@ -24,3 +24,12 @@ export type ExpenseDraft = {
   splitWith: Friend[];
 };
 
+export interface Group {
+  id: string;
+  name: string;
+  description: string;
+  members: string[];
+  balance: number;
+}
+
+
