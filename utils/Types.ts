@@ -32,4 +32,19 @@ export interface Group {
   balance: number;
 }
 
+export interface ExpenseItem {
+  id: string;
+  title: string;
+  amount: number;
+  paidBy: string;
+  date: string;
+}
+
+export interface Message {
+  id: string;
+  sender: string;
+  text: string;
+  timestamp: string;
+}
+
 
