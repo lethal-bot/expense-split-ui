@@ -19,8 +19,8 @@ function NavigationBarContent() {
     activeTab = "debts";
   } else if (pathname === "/profile") {
     activeTab = "profile";
-  } else if (pathname === "/groups") {
-    activeTab = "groups"
+  } else if (pathname === "/groups" || pathname.startsWith("/groups/")) {
+    activeTab = "groups";
   } else if (pathname === "/") {
     const tabQuery = searchParams.get("tab") as TabId;
     if (tabQuery && ["expenses"].includes(tabQuery)) {

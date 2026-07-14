@@ -6,9 +6,10 @@ import { Group } from "@/utils/Types";
 
 interface GroupListProps {
   groups: Group[];
+  onGroupClick: (group: Group) => void;
 }
 
-export function GroupList({ groups }: GroupListProps) {
+export function GroupList({ groups, onGroupClick }: GroupListProps) {
   // Get a colored gradient class based on name hash for beautiful mobile group icons
   const getAvatarGradient = (name: string) => {
     const gradients = [
@@ -45,6 +46,7 @@ export function GroupList({ groups }: GroupListProps) {
         return (
           <div
             key={group.id}
+            onClick={() => onGroupClick(group)}
             className="flex items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-sm hover:bg-muted/40 transition-all active:scale-[0.99] cursor-pointer"
           >
             <div className="flex items-center gap-3 min-w-0">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Sun, Moon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Group } from "@/utils/Types";
 import { GroupList } from "@/components/custom/GroupList";
@@ -14,6 +15,7 @@ const initialGroups: Group[] = [
 ];
 
 export default function GroupsPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [groups, setGroups] = useState<Group[]>(initialGroups);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,7 +70,10 @@ export default function GroupsPage() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Groups ({groups.length})
           </h2>
-          <GroupList groups={groups} />
+          <GroupList
+            groups={groups}
+            onGroupClick={(group) => router.push(`/groups/${group.id}`)}
+          />
         </section>
       </div>
 
