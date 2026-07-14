@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Sun, Moon, ReceiptText, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Group, ExpenseItem, Message } from "@/utils/Types";
+import { Group, ExpenseItem, Message, ExpenseSplit } from "@/utils/Types";
 import { GroupExpensesTab } from "@/components/custom/GroupExpensesTab";
 import { GroupChatTab } from "@/components/custom/GroupChatTab";
 
@@ -19,16 +19,79 @@ const initialGroups: Group[] = [
 // Mock Expenses matching group IDs
 const mockExpenses: Record<string, ExpenseItem[]> = {
   "1": [
-    { id: "e1", title: "Airbnb Booking", amount: 15000, paidBy: "Aarav", date: "Jul 11" },
-    { id: "e2", title: "Dinner at Beach Shack", amount: 2400, paidBy: "You", date: "Jul 12" },
-    { id: "e3", title: "Taxi fare", amount: 1200, paidBy: "Meera", date: "Jul 13" }
+    {
+      id: "e1",
+      title: "Airbnb Booking",
+      amount: 15000,
+      paidBy: "Aarav",
+      date: "Jul 11",
+      splits: [
+        { member: "You", amount: 5000, status: "pending" },
+        { member: "Aarav", amount: 5000, status: "approved" },
+        { member: "Meera", amount: 5000, status: "paid" }
+      ]
+    },
+    {
+      id: "e2",
+      title: "Dinner at Beach Shack",
+      amount: 2400,
+      paidBy: "You",
+      date: "Jul 12",
+      splits: [
+        { member: "You", amount: 800, status: "approved" },
+        { member: "Aarav", amount: 800, status: "paid" },
+        { member: "Meera", amount: 800, status: "pending" }
+      ]
+    },
+    {
+      id: "e3",
+      title: "Taxi fare",
+      amount: 1200,
+      paidBy: "Meera",
+      date: "Jul 13",
+      splits: [
+        { member: "You", amount: 400, status: "pending" },
+        { member: "Aarav", amount: 400, status: "approved" },
+        { member: "Meera", amount: 400, status: "approved" }
+      ]
+    }
   ],
   "2": [
-    { id: "e4", title: "Monthly Rent", amount: 20000, paidBy: "Aarav", date: "Jul 01" },
-    { id: "e5", title: "Groceries", amount: 4000, paidBy: "You", date: "Jul 05" }
+    {
+      id: "e4",
+      title: "Monthly Rent",
+      amount: 20000,
+      paidBy: "Aarav",
+      date: "Jul 01",
+      splits: [
+        { member: "You", amount: 10000, status: "pending" },
+        { member: "Aarav", amount: 10000, status: "approved" }
+      ]
+    },
+    {
+      id: "e5",
+      title: "Groceries",
+      amount: 4000,
+      paidBy: "You",
+      date: "Jul 05",
+      splits: [
+        { member: "You", amount: 2000, status: "approved" },
+        { member: "Aarav", amount: 2000, status: "pending" }
+      ]
+    }
   ],
   "3": [
-    { id: "e6", title: "Pizza Night", amount: 1800, paidBy: "Meera", date: "Jul 10" }
+    {
+      id: "e6",
+      title: "Pizza Night",
+      amount: 1800,
+      paidBy: "Meera",
+      date: "Jul 10",
+      splits: [
+        { member: "You", amount: 900, status: "pending" },
+        { member: "Meera", amount: 900, status: "approved" }
+      ]
+    }
   ]
 };
 
@@ -58,7 +121,7 @@ export default function GroupDetailsPage() {
   // Local State
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [activeSection, setActiveSection] = useState<"expenses" | "chat">("expenses");
-  
+
   // Dynamic Page Group Metadata
   const group = initialGroups.find((g) => g.id === groupId) || {
     id: groupId,
@@ -96,16 +159,55 @@ export default function GroupDetailsPage() {
     setMessages((prev) => [...prev, newMsg]);
   };
 
-  const handleAddExpense = (title: string, amount: number, paidBy: string) => {
+  const handleAddExpense = (
+    title: string,
+    amount: number,
+    paidBy: string,
+    description: string,
+    isCustomSplit: boolean,
+    customSplits: Array<{ member: string; amount: number; included: boolean }>
+  ) => {
+    let splits: ExpenseSplit[] = [];
+
+    if (isCustomSplit) {
+      splits = customSplits
+        .filter((cs) => cs.included)
+        .map((cs) => ({
+          member: cs.member,
+          amount: cs.amount,
+          status: cs.member === paidBy ? "approved" : "pending"
+        }));
+    } else {
+      const share = Math.round(amount / Math.max(group.members.length, 1));
+      splits = group.members.map((m) => ({
+        member: m,
+        amount: share,
+        status: m === paidBy ? "approved" : "pending"
+      }));
+    }
+
     const newExpense: ExpenseItem = {
       id: Date.now().toString(),
       title,
+      description: description || undefined,
       amount,
       paidBy,
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      splits,
+      isCustomSplit
     };
 
     setExpenses((prev) => [newExpense, ...prev]);
+  };
+
+  const handleUpdateExpense = (updatedExpense: ExpenseItem) => {
+    setExpenses((prev) =>
+      prev.map((e) => (e.id === updatedExpense.id ? updatedExpense : e))
+    );
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    setExpenses((prev) => prev.filter((e) => e.id !== expenseId));
   };
 
   return (
@@ -176,6 +278,8 @@ export default function GroupDetailsPage() {
               members={group.members}
               expenses={expenses}
               onAddExpense={handleAddExpense}
+              onUpdateExpense={handleUpdateExpense}
+              onDeleteExpense={handleDeleteExpense}
             />
           ) : (
             <GroupChatTab messages={messages} onSendMessage={handleSendMessage} />

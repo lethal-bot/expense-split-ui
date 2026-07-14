@@ -32,12 +32,21 @@ export interface Group {
   balance: number;
 }
 
+export interface ExpenseSplit {
+  member: string;
+  amount: number;
+  status: "pending" | "paid" | "approved" | "rejected";
+}
+
 export interface ExpenseItem {
   id: string;
   title: string;
+  description?: string;
   amount: number;
   paidBy: string;
   date: string;
+  splits: ExpenseSplit[];
+  isCustomSplit?: boolean;
 }
 
 export interface Message {
