@@ -88,20 +88,24 @@ export function useApi<TData = any, TBody = any>(
           ...restFetchOptions,
         });
 
-        let result: TData;
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          result = await response.json();
-        } else {
-          result = (await response.text()) as unknown as TData;
+        let result: any = null;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+          } else {
+            result = await response.text();
+          }
+        } catch {
+          // Ignore parse errors so that we fall back to HTTP status messages
         }
 
         if (!response.ok) {
-          throw new Error((result as any)?.message || `HTTP Error ${response.status}: ${response.statusText}`);
+          throw new Error(result?.message || `HTTP Error ${response.status}: ${response.statusText}`);
         }
 
-        setData(result);
-        return result;
+        setData(result as TData);
+        return result as TData;
       } catch (err: any) {
         if (err.name === 'AbortError') {
           // If aborted, do not throw or change state to avoid component interference
@@ -123,7 +127,7 @@ export function useApi<TData = any, TBody = any>(
   // Auto execution for GET requests on mount (if configured)
   useEffect(() => {
     if (configRef.current.autoExecute) {
-      execute().catch(() => {});
+      execute().catch(() => { });
     }
 
     return () => {
