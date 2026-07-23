@@ -1,7 +1,6 @@
 import { GalleryVerticalEnd } from "lucide-react"
-
+import { Suspense } from "react"
 import { LoginForm } from "./LoginForm"
-import { useEffect } from "react"
 
 export default function LoginPage() {
     return (
@@ -13,7 +12,9 @@ export default function LoginPage() {
                     </div>
                     Expense Split
                 </a>
-                <LoginForm />
+                <Suspense fallback={<div className="text-center py-4 text-sm text-muted-foreground">Loading form...</div>}>
+                    <LoginForm />
+                </Suspense>
             </div>
         </div>
     )
