@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { X, Plus, Check } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { MemberEmailInput } from "./MemberEmailInput";
 
 interface CreateGroupBottomSheetProps {
   isOpen: boolean;
@@ -92,7 +93,7 @@ export function CreateGroupBottomSheet({
               required
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              className="rounded-xl border-border bg-muted/30 focus-visible:ring-primary"
+              className="rounded-xl border-border bg-muted/30 focus-visible:ring-primary h-11"
             />
           </div>
 
@@ -105,7 +106,7 @@ export function CreateGroupBottomSheet({
               placeholder="e.g. Rent splitting, travel bills"
               value={groupDescription}
               onChange={(e) => setGroupDescription(e.target.value)}
-              className="rounded-xl border-border bg-muted/30 focus-visible:ring-primary"
+              className="rounded-xl border-border bg-muted/30 focus-visible:ring-primary h-11"
             />
           </div>
 
@@ -122,38 +123,25 @@ export function CreateGroupBottomSheet({
                 <Plus className="h-3.5 w-3.5" /> Add Friend
               </button>
             </div>
-            
-            <div className="space-y-2">
+
+            <div className="space-y-3">
               {/* Always include 'You' read-only indicator */}
               <div className="flex items-center gap-2">
                 <Input
                   disabled
                   value="You (Group Creator)"
-                  className="rounded-xl border-border bg-muted/50 text-muted-foreground cursor-not-allowed"
+                  className="rounded-xl border-border bg-muted/50 text-muted-foreground cursor-not-allowed h-11"
                 />
               </div>
 
               {memberEmails.map((email, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <Input
-                    type="email"
-                    placeholder="friend@example.com"
-                    value={email}
-                    onChange={(e) => handleEmailChange(idx, e.target.value)}
-                    className="rounded-xl border-border bg-muted/30 focus-visible:ring-primary flex-1"
-                  />
-                  {memberEmails.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-xl h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-                      onClick={() => handleRemoveEmailField(idx)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+                <MemberEmailInput
+                  key={idx}
+                  value={email}
+                  onChange={(val) => handleEmailChange(idx, val)}
+                  onRemove={() => handleRemoveEmailField(idx)}
+                  showRemove={memberEmails.length > 1}
+                />
               ))}
             </div>
           </div>

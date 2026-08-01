@@ -1,6 +1,20 @@
 export type Friend = "You" | "Aarav" | "Meera";
 export type TabId = "expenses" | "groups" | "add" | "debts" | "profile";
 
+export type ApiResponse<T> = {
+  status: string;
+  message: string;
+  error: string;
+  timeStamp: Date;
+  data: T;
+}
+
+export type FilteredSearchUser = {
+  name: string;
+  email: string;
+  id: string;
+}
+
 export type Expense = {
   id: number;
   title: string;

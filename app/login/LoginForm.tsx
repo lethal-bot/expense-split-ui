@@ -138,6 +138,7 @@ export function LoginForm({
                 });
                 console.log("Login successful:", response);
                 localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
                 router.push("/")
             }
         } catch (err) {

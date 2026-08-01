@@ -147,5 +147,10 @@ export function useApi<TData = any, TBody = any>(
       setError(null);
       setLoading(false);
     }, []),
+    abort: useCallback(() => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    }, []),
   };
 }
