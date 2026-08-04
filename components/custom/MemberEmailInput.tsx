@@ -12,27 +12,33 @@ interface MemberEmailInputProps {
   onChange: (val: string) => void;
   onRemove: () => void;
   showRemove: boolean;
+  onUserFound: (userId: string | null) => void;
 }
 
-export function MemberEmailInput({ value, onChange, onRemove, showRemove }: MemberEmailInputProps) {
+export function MemberEmailInput({ value, onChange, onRemove, showRemove, onUserFound }: MemberEmailInputProps) {
   const [status, setStatus] = useState<'idle' | 'searching' | 'found' | 'not_found' | 'invalid'>('idle');
   const [userName, setUserName] = useState<string>("");
 
   const searchApi = useApi<ApiResponse<FilteredSearchUser>>(API.searchUser);
 
   useEffect(() => {
+    let active = true;
+
     if (!value.trim()) {
       setStatus('idle');
+      onUserFound(null);
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(value)) {
       setStatus('invalid');
+      onUserFound(null);
       return;
     }
 
     setStatus('searching');
+    onUserFound(null);
 
     const timer = setTimeout(async () => {
       try {
@@ -47,31 +53,43 @@ export function MemberEmailInput({ value, onChange, onRemove, showRemove }: Memb
           headers,
           queryParams: { email: value }
         });
+
+        if (!active) return;
+
         console.log("search data", res)
         if (res && res.status === "SUCCESS") {
           setStatus('found');
           setUserName(res.data.name);
+          onUserFound(res.data.userId);
         } else {
           setStatus('not_found');
+          onUserFound(null);
         }
-      } catch (err) {
+      } catch (err: any) {
+        if (err.name === 'AbortError' || !active) return;
+
         // Fallback checks for development/mock purposes
-        const mockDb: Record<string, string> = {
-          "aarav@example.com": "Aarav",
-          "meera@example.com": "Meera",
-          "friend@example.com": "Friend"
+        const mockDb: Record<string, { name: string; id: string }> = {
+          "aarav@example.com": { name: "Aarav", id: "u2" },
+          "meera@example.com": { name: "Meera", id: "u3" },
+          "friend@example.com": { name: "Friend", id: "u4" }
         };
         const lowerVal = value.toLowerCase();
         if (mockDb[lowerVal]) {
           setStatus('found');
-          setUserName(mockDb[lowerVal]);
+          setUserName(mockDb[lowerVal].name);
+          onUserFound(mockDb[lowerVal].id);
         } else {
           setStatus('not_found');
+          onUserFound(null);
         }
       }
     }, 600);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [value]);
 
   return (

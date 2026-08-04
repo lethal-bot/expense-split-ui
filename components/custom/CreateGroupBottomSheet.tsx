@@ -8,50 +8,62 @@ import { MemberEmailInput } from "./MemberEmailInput";
 interface CreateGroupBottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateGroup: (name: string, description: string, emails: string[]) => void;
+  onCreateGroup: (name: string, description: string, userIds: string[]) => void;
+  isLoading?: boolean;
 }
 
 export function CreateGroupBottomSheet({
   isOpen,
   onClose,
-  onCreateGroup
+  onCreateGroup,
+  isLoading = false
 }: CreateGroupBottomSheetProps) {
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
-  const [memberEmails, setMemberEmails] = useState<string[]>([""]);
+  const [members, setMembers] = useState<Array<{ email: string; userId: string | null }>>([{ email: "", userId: null }]);
 
   // Reset inputs when sheet closes or opens
   useEffect(() => {
     if (!isOpen) {
       setGroupName("");
       setGroupDescription("");
-      setMemberEmails([""]);
+      setMembers([{ email: "", userId: null }]);
     }
   }, [isOpen]);
 
   const handleEmailChange = (index: number, val: string) => {
-    setMemberEmails((prev) => {
+    setMembers((prev) => {
       const copy = [...prev];
-      copy[index] = val;
+      copy[index] = { ...copy[index], email: val, userId: null };
+      return copy;
+    });
+  };
+
+  const handleUserFound = (index: number, userId: string | null) => {
+    setMembers((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], userId };
       return copy;
     });
   };
 
   const handleAddEmailField = () => {
-    setMemberEmails((prev) => [...prev, ""]);
+    setMembers((prev) => [...prev, { email: "", userId: null }]);
   };
 
   const handleRemoveEmailField = (index: number) => {
-    setMemberEmails((prev) => prev.filter((_, i) => i !== index));
+    setMembers((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!groupName.trim()) return;
 
-    // Filter out empty input fields
-    const validEmails = memberEmails.filter((email) => email.trim() !== "");
-    onCreateGroup(groupName, groupDescription, validEmails);
+    // Filter out unregistered members and map to userIds
+    const validUserIds = members
+      .filter((m) => m.email.trim() !== "" && m.userId !== null)
+      .map((m) => m.userId as string);
+    onCreateGroup(groupName, groupDescription, validUserIds);
   };
 
   return (
@@ -134,21 +146,22 @@ export function CreateGroupBottomSheet({
                 />
               </div>
 
-              {memberEmails.map((email, idx) => (
+              {members.map((member, idx) => (
                 <MemberEmailInput
                   key={idx}
-                  value={email}
+                  value={member.email}
                   onChange={(val) => handleEmailChange(idx, val)}
                   onRemove={() => handleRemoveEmailField(idx)}
-                  showRemove={memberEmails.length > 1}
+                  showRemove={members.length > 1}
+                  onUserFound={(userId) => handleUserFound(idx, userId)}
                 />
               ))}
             </div>
           </div>
 
           <div className="pt-4">
-            <Button type="submit" className="w-full rounded-xl py-6 font-semibold shadow-md">
-              Create Group
+            <Button type="submit" disabled={isLoading} className="w-full rounded-xl py-6 font-semibold shadow-md">
+              {isLoading ? "Creating..." : "Create Group"}
             </Button>
           </div>
         </form>

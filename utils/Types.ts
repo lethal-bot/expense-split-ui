@@ -12,7 +12,7 @@ export type ApiResponse<T> = {
 export type FilteredSearchUser = {
   name: string;
   email: string;
-  id: string;
+  userId: string;
 }
 
 export type Expense = {
@@ -42,7 +42,7 @@ export interface Group {
   id: string;
   name: string;
   description: string;
-  members: string[];
+  members: Array<{ name: string, email: string, userId: string }>;
   balance: number;
 }
 

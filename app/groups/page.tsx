@@ -4,14 +4,45 @@ import { useState, useEffect } from "react";
 import { Plus, Sun, Moon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Group } from "@/utils/Types";
+import { Group, ApiResponse } from "@/utils/Types";
 import { GroupList } from "@/components/custom/GroupList";
 import { CreateGroupBottomSheet } from "@/components/custom/CreateGroupBottomSheet";
+import { useApi } from "@/hooks/useApi";
+import { API } from "@/utils/Api";
+import { getToken } from "@/utils/Helper";
 
 const initialGroups: Group[] = [
-  { id: "1", name: "Trip to Goa", description: "Weekend getaway expenses", members: ["You", "Aarav", "Meera"], balance: 2400 },
-  { id: "2", name: "Apartment 4B", description: "Rent and monthly groceries", members: ["You", "Aarav"], balance: -1200 },
-  { id: "3", name: "Weekly Dinners", description: "Shared food outings", members: ["You", "Meera"], balance: 0 }
+  {
+    id: "1",
+    name: "Trip to Goa",
+    description: "Weekend getaway expenses",
+    members: [
+      { name: "You", email: "you@example.com", userId: "u1" },
+      { name: "Aarav", email: "aarav@example.com", userId: "u2" },
+      { name: "Meera", email: "meera@example.com", userId: "u3" }
+    ],
+    balance: 2400
+  },
+  {
+    id: "2",
+    name: "Apartment 4B",
+    description: "Rent and monthly groceries",
+    members: [
+      { name: "You", email: "you@example.com", userId: "u1" },
+      { name: "Aarav", email: "aarav@example.com", userId: "u2" }
+    ],
+    balance: -1200
+  },
+  {
+    id: "3",
+    name: "Weekly Dinners",
+    description: "Shared food outings",
+    members: [
+      { name: "You", email: "you@example.com", userId: "u1" },
+      { name: "Meera", email: "meera@example.com", userId: "u3" }
+    ],
+    balance: 0
+  }
 ];
 
 export default function GroupsPage() {
@@ -19,6 +50,8 @@ export default function GroupsPage() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [groups, setGroups] = useState<Group[]>(initialGroups);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const createGroupApi = useApi<ApiResponse<Group>>(API.createGroup);
 
   useEffect(() => {
     const currentTheme = (document.documentElement.getAttribute("data-theme") || "light") as "light" | "dark";
@@ -32,17 +65,31 @@ export default function GroupsPage() {
     document.documentElement.setAttribute("data-theme", nextTheme);
   };
 
-  const handleCreateGroup = (name: string, description: string, emails: string[]) => {
-    const newGroup: Group = {
-      id: Date.now().toString(),
-      name,
-      description,
-      members: ["You", ...emails],
-      balance: 0 // Default to settled for new groups
-    };
+  const handleCreateGroup = async (name: string, description: string, userIds: string[]) => {
+    try {
+      const token = getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
 
-    setGroups((prev) => [newGroup, ...prev]);
-    setIsModalOpen(false);
+      const res = await createGroupApi.execute({
+        method: "POST",
+        headers,
+        body: {
+          name,
+          description,
+          requestUsersToAdd: userIds
+        }
+      });
+
+      if (res && res.status === "SUCCESS") {
+        setGroups((prev) => [res.data, ...prev]);
+        setIsModalOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to create group:", err);
+    }
   };
 
   return (
@@ -91,6 +138,7 @@ export default function GroupsPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreateGroup={handleCreateGroup}
+        isLoading={createGroupApi.loading}
       />
     </main>
   );

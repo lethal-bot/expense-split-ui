@@ -11,9 +11,37 @@ import { GroupChatTab } from "@/components/custom/GroupChatTab";
 
 // Mock Groups List
 const initialGroups: Group[] = [
-  { id: "1", name: "Trip to Goa", description: "Weekend getaway expenses", members: ["You", "Aarav", "Meera"], balance: 2400 },
-  { id: "2", name: "Apartment 4B", description: "Rent and monthly groceries", members: ["You", "Aarav"], balance: -1200 },
-  { id: "3", name: "Weekly Dinners", description: "Shared food outings", members: ["You", "Meera"], balance: 0 }
+  {
+    id: "1",
+    name: "Trip to Goa",
+    description: "Weekend getaway expenses",
+    members: [
+      { name: "You", email: "you@example.com", userId: "u1" },
+      { name: "Aarav", email: "aarav@example.com", userId: "u2" },
+      { name: "Meera", email: "meera@example.com", userId: "u3" }
+    ],
+    balance: 2400
+  },
+  {
+    id: "2",
+    name: "Apartment 4B",
+    description: "Rent and monthly groceries",
+    members: [
+      { name: "You", email: "you@example.com", userId: "u1" },
+      { name: "Aarav", email: "aarav@example.com", userId: "u2" }
+    ],
+    balance: -1200
+  },
+  {
+    id: "3",
+    name: "Weekly Dinners",
+    description: "Shared food outings",
+    members: [
+      { name: "You", email: "you@example.com", userId: "u1" },
+      { name: "Meera", email: "meera@example.com", userId: "u3" }
+    ],
+    balance: 0
+  }
 ];
 
 // Mock Expenses matching group IDs
@@ -127,7 +155,7 @@ export default function GroupDetailsPage() {
     id: groupId,
     name: "Unknown Group",
     description: "",
-    members: ["You"],
+    members: [{ name: "You", email: "you@example.com", userId: "u1" }],
     balance: 0
   };
 
@@ -180,9 +208,9 @@ export default function GroupDetailsPage() {
     } else {
       const share = Math.round(amount / Math.max(group.members.length, 1));
       splits = group.members.map((m) => ({
-        member: m,
+        member: m.name,
         amount: share,
-        status: m === paidBy ? "approved" : "pending"
+        status: m.name === paidBy ? "approved" : "pending"
       }));
     }
 
@@ -228,7 +256,7 @@ export default function GroupDetailsPage() {
             <div className="min-w-0">
               <h1 className="text-xl font-bold tracking-tight truncate">{group.name}</h1>
               <p className="text-xs text-muted-foreground truncate">
-                {group.members.join(", ")}
+                {group.members.map((m) => m.name).join(", ")}
               </p>
             </div>
           </div>
@@ -275,7 +303,7 @@ export default function GroupDetailsPage() {
         <div className="flex-1 flex flex-col min-h-0">
           {activeSection === "expenses" ? (
             <GroupExpensesTab
-              members={group.members}
+              members={group.members.map((m) => m.name)}
               expenses={expenses}
               onAddExpense={handleAddExpense}
               onUpdateExpense={handleUpdateExpense}

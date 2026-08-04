@@ -41,7 +41,7 @@ export function GroupList({ groups, onGroupClick }: GroupListProps) {
   return (
     <div className="space-y-3">
       {groups.map((group) => {
-        const displayMembers = group.members.join(", ");
+        const displayMembers = group.members.map(m => m.name).join(", ");
 
         return (
           <div

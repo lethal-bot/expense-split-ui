@@ -7,4 +7,5 @@ export const API = {
     forgetPasswordSendOtp: baseURL + "/api/v1/auth/send-otp-for-verified-user",
     otpVerificationAfterForgetPassword: baseURL + "/api/v1/auth/forget-password",
     searchUser: baseURL + "/api/v1/user",
+    createGroup: baseURL + "/api/v1/group/create-group"
 }
