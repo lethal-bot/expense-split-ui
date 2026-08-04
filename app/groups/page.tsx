@@ -11,51 +11,63 @@ import { useApi } from "@/hooks/useApi";
 import { API } from "@/utils/Api";
 import { getToken } from "@/utils/Helper";
 
-const initialGroups: Group[] = [
-  {
-    id: "1",
-    name: "Trip to Goa",
-    description: "Weekend getaway expenses",
-    members: [
-      { name: "You", email: "you@example.com", userId: "u1" },
-      { name: "Aarav", email: "aarav@example.com", userId: "u2" },
-      { name: "Meera", email: "meera@example.com", userId: "u3" }
-    ],
-    balance: 2400
-  },
-  {
-    id: "2",
-    name: "Apartment 4B",
-    description: "Rent and monthly groceries",
-    members: [
-      { name: "You", email: "you@example.com", userId: "u1" },
-      { name: "Aarav", email: "aarav@example.com", userId: "u2" }
-    ],
-    balance: -1200
-  },
-  {
-    id: "3",
-    name: "Weekly Dinners",
-    description: "Shared food outings",
-    members: [
-      { name: "You", email: "you@example.com", userId: "u1" },
-      { name: "Meera", email: "meera@example.com", userId: "u3" }
-    ],
-    balance: 0
-  }
-];
+
+interface ApiGroup {
+  groupId: number;
+  name: string;
+  adminId: number;
+  description: string | null;
+  isActive: string;
+  createdDate: string;
+  modifiedDate: string;
+  memberCount: number;
+  memberDetails: Array<{ email: string; name: string; userId: number }>;
+}
 
 export default function GroupsPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [groups, setGroups] = useState<Group[]>(initialGroups);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const createGroupApi = useApi<ApiResponse<Group>>(API.createGroup);
+  const createGroupApi = useApi<ApiResponse<ApiGroup>>(API.createGroup);
+  const myGroupsApi = useApi<ApiResponse<ApiGroup[]>>(API.myGroups);
+
+  const mapApiGroupToGroup = (g: ApiGroup): Group => ({
+    id: g.groupId.toString(),
+    name: g.name,
+    description: g.description || "",
+    members: g.memberDetails.map((m) => ({
+      name: m.name,
+      email: m.email,
+      userId: m.userId.toString()
+    })),
+    balance: 0 // "i will add the amount later"
+  });
 
   useEffect(() => {
     const currentTheme = (document.documentElement.getAttribute("data-theme") || "light") as "light" | "dark";
     setTheme(currentTheme);
+
+    const fetchGroups = async () => {
+      try {
+        const token = getToken();
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        const res = await myGroupsApi.execute({
+          method: "GET",
+          headers
+        });
+        if (res && res.status === "SUCCESS") {
+          setGroups(res.data.map(mapApiGroupToGroup));
+        }
+      } catch (err) {
+        console.error("Failed to fetch groups:", err);
+      }
+    };
+    fetchGroups();
   }, []);
 
   const toggleTheme = () => {
@@ -84,7 +96,7 @@ export default function GroupsPage() {
       });
 
       if (res && res.status === "SUCCESS") {
-        setGroups((prev) => [res.data, ...prev]);
+        setGroups((prev) => [mapApiGroupToGroup(res.data), ...prev]);
         setIsModalOpen(false);
       }
     } catch (err) {
@@ -117,10 +129,17 @@ export default function GroupsPage() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Groups ({groups.length})
           </h2>
-          <GroupList
-            groups={groups}
-            onGroupClick={(group) => router.push(`/groups/${group.id}`)}
-          />
+          {myGroupsApi.loading ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-2">
+              <span className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              <p className="text-xs text-muted-foreground">Loading groups...</p>
+            </div>
+          ) : (
+            <GroupList
+              groups={groups}
+              onGroupClick={(group) => router.push(`/groups/${group.id}`)}
+            />
+          )}
         </section>
       </div>
 

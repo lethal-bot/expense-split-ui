@@ -1,4 +1,5 @@
-const baseURL = "https://expense-split-api-43zz.onrender.com";
+// const baseURL = "https://expense-split-api-43zz.onrender.com";
+const baseURL = "http://localhost:8080";
 
 export const API = {
     login: baseURL + "/api/v1/auth/login",
